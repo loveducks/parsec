@@ -8,6 +8,7 @@
 char *get_clipboard();
 char* print_json_pretty(const char *json);
 void remove_empty_space(char *json);
+void add_ident(char *formatted, int tabs, size_t *pos);
 
 // xclip -selection clipboard -o | less
 // xclip -selection primary -o | less
@@ -48,13 +49,11 @@ char *get_clipboard() {
     }
 
     if (fp == NULL) {
-        perror("Primary Clipboard empty! \n");
+        perror("Clipboard empty! \n");
         free(result);
         return NULL;
     }
 
-    int *tabs = malloc(sizeof(int));
-    *tabs = 0;
     while(fgets(buffer, sizeof(buffer), fp)) {
         size_t len = strlen(buffer);
         char *temp = realloc(result, size + len);
@@ -73,7 +72,6 @@ char *get_clipboard() {
 
     char* pretty = print_json_pretty(result);
 
-    free(tabs);
     free(result);
 
     pclose(fp);
@@ -113,31 +111,18 @@ char* print_json_pretty(const char *json) {
 			formatted[pos++] = c;
 			formatted[pos++] = '\n';
 			tabs++;
-
-			for (int t = 0; t < tabs; t++) {
-				formatted[pos++] = ' ';
-				formatted[pos++] = ' ';
-            }
+            add_ident(formatted, tabs, &pos);
 
 		} else if (c == '}' || c == ']') {
 			formatted[pos++] = '\n';
 			tabs--;
-
-			for (int t = 0; t < tabs; t++) {
-				formatted[pos++] = ' ';
-				formatted[pos++] = ' ';
-            }
-
+            add_ident(formatted, tabs, &pos);
 			formatted[pos++] = c;
 
 		} else if (c == ',') {
 			formatted[pos++] = c;
 			formatted[pos++] = '\n';
-
-			for (int t = 0; t < tabs; t++) {
-				formatted[pos++] = ' ';
-				formatted[pos++] = ' ';
-            }
+            add_ident(formatted, tabs, &pos);
 
 		} else {
 			formatted[pos++] = c;
@@ -146,4 +131,11 @@ char* print_json_pretty(const char *json) {
 
 	formatted[pos] = '\0';
 	return formatted;
+}
+
+void add_ident(char *formatted, int tabs, size_t *pos) {
+    for (int t = 0; t < tabs; t++) {
+        formatted[(*pos)++] = ' ';
+        formatted[(*pos)++] = ' ';
+    }
 }
